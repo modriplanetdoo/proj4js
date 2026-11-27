@@ -1141,4 +1141,28 @@ describe('proj4', function () {
       assert.closeTo(backToNzmg[1], nzmg[1], 1e-2, 'northing is close');
     });
   });
+
+  describe('BD72 / Belgian Lambert 72 (EPSG:31370) datum shift', function () {
+    var wkt = testPoints.find(function (p) {
+      return typeof p.code === 'string' && p.code.indexOf('DATUM["D_Belge_1972"') !== -1;
+    }).code;
+    // [easting, northing, longitude, latitude]
+    var point = [193392.542, 165590.567999, 4.984281239184, 50.799151884836];
+
+    it('uses the EPSG:15929 parameters', function () {
+      var proj = proj4(wkt).oProj;
+      assert.equal(proj.datumCode, 'rnb72');
+      assert.deepEqual(proj.datum.datum_params.slice(0, 3), [-106.8686, 52.2978, -103.7239]);
+    });
+
+    it('transforms to WGS 84 and back', function () {
+      var ll = proj4(wkt, 'EPSG:4326').forward(point.slice(0, 2));
+      assert.closeTo(ll[0], point[2], 1e-8, 'longitude is close');
+      assert.closeTo(ll[1], point[3], 1e-8, 'latitude is close');
+
+      var xy = proj4('EPSG:4326', wkt).forward([point[2], point[3]]);
+      assert.closeTo(xy[0], point[0], 1e-3, 'easting is close');
+      assert.closeTo(xy[1], point[1], 1e-3, 'northing is close');
+    });
+  });
 });
